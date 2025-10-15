@@ -349,10 +349,13 @@ void render() {
   glUniformMatrix4fv(glGetUniformLocation(g_program, "viewMat"), 1, GL_FALSE, glm::value_ptr(viewMatrix)); // compute the view matrix of the camera and pass it to the GPU program
   glUniformMatrix4fv(glGetUniformLocation(g_program, "projMat"), 1, GL_FALSE, glm::value_ptr(projMatrix)); // compute the projection matrix of the camera and pass it to the GPU program
 
+  glm::vec3 camPos = g_camera.getPosition();
+  glUniform3fv(glGetUniformLocation(g_program, "camPos"), 1, glm::value_ptr(camPos));
+
 
   glm::mat4 M_sun = glm::scale(glm::mat4(1.0f), glm::vec3(kSizeSun));
   glUniformMatrix4fv(glGetUniformLocation(g_program, "modelMat"), 1, GL_FALSE, glm::value_ptr(M_sun));
-  glUniform3f(glGetUniformLocation(g_program, "fCol"), 1.0f, 1.0f, 0.2f);
+  glUniform3f(glGetUniformLocation(g_program, "objectColor"), 1.0f, 1.0f, 0.2f);
   g_mesh.render();
 
   //std::cout << "sun drawn" <<std::endl;
@@ -360,14 +363,14 @@ void render() {
 
   glm::mat4 M_earth = glm::translate(glm::mat4(1.0f), glm::vec3(kRadOrbitEarth, 0.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(kSizeEarth));
   glUniformMatrix4fv(glGetUniformLocation(g_program, "modelMat"), 1, GL_FALSE, glm::value_ptr(M_earth));
-  glUniform3f(glGetUniformLocation(g_program, "fCol"), 0.2f, 0.2f, 1.0f);
+  glUniform3f(glGetUniformLocation(g_program, "objectColor"), 0.2f, 0.2f, 1.0f);
   g_mesh.render();
 
   //std::cout << "earth drawn" <<std::endl;
 
   glm::mat4 M_moon = glm::translate(M_earth, glm::vec3(kRadOrbitMoon, 0.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(kSizeMoon));
   glUniformMatrix4fv(glGetUniformLocation(g_program, "modelMat"), 1, GL_FALSE, glm::value_ptr(M_moon));
-  glUniform3f(glGetUniformLocation(g_program, "fCol"), 0.8f, 0.8f, 0.8f); 
+  glUniform3f(glGetUniformLocation(g_program, "objectColor"), 0.8f, 0.8f, 0.8f); 
 
   g_mesh.render();
 
