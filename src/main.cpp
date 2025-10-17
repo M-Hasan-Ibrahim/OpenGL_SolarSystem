@@ -58,6 +58,9 @@ const static float kRadOrbitMoon = 1.5f;
 glm::mat4 g_sun(1.0f), g_earth(1.0f), g_moon(1.0f);
 float g_baseSpinSpeed = 1.0f;
 
+GLuint g_textureSun = 0;
+GLuint g_textureEarth = 0;
+GLuint g_textureMoon = 0;
 // Window parameters
 GLFWwindow *g_window = nullptr;
 
@@ -113,6 +116,8 @@ Camera g_camera;
 
 GLuint loadTextureFromFileToGPU(const std::string &filename) {
   int width, height, numComponents;
+  stbi_set_flip_vertically_on_load(true);
+
   // Loading the image in CPU memory using stb_image
   unsigned char *data = stbi_load(
     filename.c_str(),
@@ -123,6 +128,16 @@ GLuint loadTextureFromFileToGPU(const std::string &filename) {
   GLuint texID;
   // TODO: create a texture and upload the image data in GPU memory using
   // glGenTextures, glBindTexture, glTexParameteri, and glTexImage2D
+  glGenTextures(1, &texID);
+  glBindTexture(GL_TEXTURE_2D, texID);
+
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+  
 
   // Free useless CPU memory
   stbi_image_free(data);
@@ -323,11 +338,20 @@ void init() {
   initCPUgeometry();
   initGPUprogram();
   initGPUgeometry();
+
+  g_textureSun = loadTextureFromFileToGPU("./media/sun.jpg");
+  g_textureEarth = loadTextureFromFileToGPU("./media/earth.jpg");
+  g_textureMoon = loadTextureFromFileToGPU("./media/moon.jpg");
+
   initCamera();
 }
 
 //cleans GPU/GLFW resources before exit
 void clear() {
+  if(g_textureSun) glDeleteTextures(1, &g_textureSun);
+  if(g_textureEarth) glDeleteTextures(1, &g_textureEarth);
+  if(g_textureMoon) glDeleteTextures(1, &g_textureMoon);
+
   g_mesh.destroy();
   glDeleteProgram(g_program);
 
@@ -351,23 +375,26 @@ void render() {
   glm::vec3 camPos = g_camera.getPosition();
   glUniform3fv(glGetUniformLocation(g_program, "camPos"), 1, glm::value_ptr(camPos));
 
-
+  glUniform1i(glGetUniformLocation(g_program, "textureSampler"), 0);
   
+
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, g_textureSun);
   glUniformMatrix4fv(glGetUniformLocation(g_program, "modelMat"), 1, GL_FALSE, glm::value_ptr(g_sun));
   glUniform3f(glGetUniformLocation(g_program, "objectColor"), 1.0f, 1.0f, 0.2f);
   g_mesh.render();
 
   //std::cout << "sun drawn" <<std::endl;
 
-
-  
+glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, g_textureEarth);
   glUniformMatrix4fv(glGetUniformLocation(g_program, "modelMat"), 1, GL_FALSE, glm::value_ptr(g_earth));
   glUniform3f(glGetUniformLocation(g_program, "objectColor"), 0.2f, 0.2f, 1.0f);
   g_mesh.render();
 
   //std::cout << "earth drawn" <<std::endl;
-
-
+glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, g_textureMoon);
   glUniformMatrix4fv(glGetUniformLocation(g_program, "modelMat"), 1, GL_FALSE, glm::value_ptr(g_moon));
   glUniform3f(glGetUniformLocation(g_program, "objectColor"), 0.8f, 0.8f, 0.8f); 
 

@@ -2,6 +2,8 @@
 #include <glad/gl.h>
 #include <vector>
 
+#include <iostream>
+
 class Mesh {
 public:
   
@@ -11,6 +13,11 @@ public:
 
   void setNormals(const std::vector<float>& nrm);
   void buildSphere(int stacks = 30, int slices = 30);
+
+  void setTextureCoordinates(const std::vector<float>& uv);
+
+  std::vector<float> m_uv;
+  GLuint m_vboUV = 0;
 
 
   void upload();    

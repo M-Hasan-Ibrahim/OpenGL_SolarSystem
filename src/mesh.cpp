@@ -9,6 +9,7 @@ void Mesh::setPositions(const std::vector<float>& pos) { m_pos = pos; }
 void Mesh::setColors(const std::vector<float>& col) { m_col = col; }
 void Mesh::setIndices(const std::vector<unsigned int>& idx) { m_idx = idx; }
 void Mesh::setNormals(const std::vector<float>& nrm) {m_nrm = nrm;}
+void Mesh::setTextureCoordinates(const std::vector<float>& uv) {m_uv = uv;}
 
 void Mesh::upload() {
   
@@ -55,6 +56,17 @@ void Mesh::upload() {
     glEnableVertexAttribArray(2);
   }
 
+  if (!m_uv.empty()) {
+    glGenBuffers(1, &m_vboUV);
+    glBindBuffer(GL_ARRAY_BUFFER, m_vboUV);
+    glBufferData(GL_ARRAY_BUFFER,
+                 sizeof(float) * m_uv.size(),
+                 m_uv.data(),
+                 GL_DYNAMIC_READ);
+    glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, 2*sizeof(GLfloat), 0);
+    glEnableVertexAttribArray(3);
+  }
+
   
   glGenBuffers(1, &m_ibo);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ibo);
@@ -84,6 +96,11 @@ void Mesh::buildSphere(int stacks, int slices){
 
       m_pos.insert(m_pos.end(), {x, y, z});
       m_nrm.insert(m_nrm.end(), {x, y, z});
+
+      float u = (float)j/slices;
+      float v = (float)i/stacks;
+      m_uv.insert(m_uv.end(), {u, v});
+
     }
   }
 
@@ -96,6 +113,9 @@ void Mesh::buildSphere(int stacks, int slices){
       m_idx.insert(m_idx.end(), {second, second + 1, first + 1});
     }
   }
+
+  
+
 }
 
 void Mesh::render() const {
