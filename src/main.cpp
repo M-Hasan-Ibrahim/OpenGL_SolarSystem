@@ -373,35 +373,34 @@ void render() {
   glUniformMatrix4fv(glGetUniformLocation(g_program, "projMat"), 1, GL_FALSE, glm::value_ptr(projMatrix)); // compute the projection matrix of the camera and pass it to the GPU program
 
   glm::vec3 camPos = g_camera.getPosition();
+  glm::vec3 lightPos = glm::vec3(g_sun * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
   glUniform3fv(glGetUniformLocation(g_program, "camPos"), 1, glm::value_ptr(camPos));
-
+  glUniform3fv(glGetUniformLocation(g_program, "lightPos"), 1, glm::value_ptr(lightPos));
   glUniform1i(glGetUniformLocation(g_program, "textureSampler"), 0);
-  
-
   glActiveTexture(GL_TEXTURE0);
+
+
   glBindTexture(GL_TEXTURE_2D, g_textureSun);
   glUniformMatrix4fv(glGetUniformLocation(g_program, "modelMat"), 1, GL_FALSE, glm::value_ptr(g_sun));
-  glUniform3f(glGetUniformLocation(g_program, "objectColor"), 1.0f, 1.0f, 0.2f);
+  glUniform3f(glGetUniformLocation(g_program, "objectColor"), 1.0f, 1.0f, 1.0f);
   g_mesh.render();
 
   //std::cout << "sun drawn" <<std::endl;
 
-glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, g_textureEarth);
   glUniformMatrix4fv(glGetUniformLocation(g_program, "modelMat"), 1, GL_FALSE, glm::value_ptr(g_earth));
-  glUniform3f(glGetUniformLocation(g_program, "objectColor"), 0.2f, 0.2f, 1.0f);
+  glUniform3f(glGetUniformLocation(g_program, "objectColor"), 1.0f, 1.0f, 1.0f);
   g_mesh.render();
 
   //std::cout << "earth drawn" <<std::endl;
-glActiveTexture(GL_TEXTURE0);
+
   glBindTexture(GL_TEXTURE_2D, g_textureMoon);
   glUniformMatrix4fv(glGetUniformLocation(g_program, "modelMat"), 1, GL_FALSE, glm::value_ptr(g_moon));
-  glUniform3f(glGetUniformLocation(g_program, "objectColor"), 0.8f, 0.8f, 0.8f); 
+  glUniform3f(glGetUniformLocation(g_program, "objectColor"), 1.0f, 1.0f, 1.0f); 
 
   g_mesh.render();
 
   //std::cout << "moon drawn" <<std::endl;
-  
 }
 
 // Update any accessible variable based on the current time

@@ -3,8 +3,9 @@
 out vec4 color;	  // Shader output: the color response attached to this fragment
 
 uniform vec3 camPos;
-uniform vec3 objectColor;
+uniform vec3 lightPos;
 uniform sampler2D textureSampler;
+uniform vec3 objectColor;
 
 in vec3 fPosition;
 in vec3 fNormal;
@@ -14,17 +15,18 @@ in vec2 fTexture;
 void main() {
 	
 	vec3 n = normalize(fNormal);
-	vec3 l = normalize(vec3(1.0, 1.0, 0.0));
+	vec3 l = normalize(lightPos - fPosition);
 
 	vec3 v = normalize(camPos - fPosition);
 	vec3 r = reflect(-l, n);
 
 	vec3 textureColor = texture(textureSampler, fTexture).rgb;
 	vec3 base = textureColor * objectColor;
+	
 
 	vec3 Ka = 0.2 * base;
 	vec3 Kd = base;
-	vec3 Ks = vec3(0.8);
+	vec3 Ks = vec3(0.6);
 	float shininess = 32.0;
 
 	vec3 ambient = Ka;
