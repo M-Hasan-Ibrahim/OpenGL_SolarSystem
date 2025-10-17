@@ -49,11 +49,14 @@ static Mesh g_mesh;
 // const static float kSizeMoon = 0.25;
 // const static float kRadOrbitEarth = 10;
 // const static float kRadOrbitMoon = 2;
-const static float kSizeSun = 0.4f;
-const static float kSizeEarth = 0.15f;
+const static float kSizeSun = 0.25f;
+const static float kSizeEarth = 0.1f;
 const static float kSizeMoon = 0.15f;
 const static float kRadOrbitEarth = 1.25f;
-const static float kRadOrbitMoon = 0.5f;
+const static float kRadOrbitMoon = 1.5f;
+
+glm::mat4 g_sun(1.0f), g_earth(1.0f), g_moon(1.0f);
+float g_baseSpinSpeed = 1.0f;
 
 // Window parameters
 GLFWwindow *g_window = nullptr;
@@ -342,10 +345,6 @@ void render() {
 
   glUseProgram(g_program);
 
-
-  const glm::mat4 V = g_camera.computeViewMatrix();
-  const glm::mat4 P = g_camera.computeProjectionMatrix();
-
   glUniformMatrix4fv(glGetUniformLocation(g_program, "viewMat"), 1, GL_FALSE, glm::value_ptr(viewMatrix)); // compute the view matrix of the camera and pass it to the GPU program
   glUniformMatrix4fv(glGetUniformLocation(g_program, "projMat"), 1, GL_FALSE, glm::value_ptr(projMatrix)); // compute the projection matrix of the camera and pass it to the GPU program
 
@@ -353,23 +352,23 @@ void render() {
   glUniform3fv(glGetUniformLocation(g_program, "camPos"), 1, glm::value_ptr(camPos));
 
 
-  glm::mat4 M_sun = glm::scale(glm::mat4(1.0f), glm::vec3(kSizeSun));
-  glUniformMatrix4fv(glGetUniformLocation(g_program, "modelMat"), 1, GL_FALSE, glm::value_ptr(M_sun));
+  
+  glUniformMatrix4fv(glGetUniformLocation(g_program, "modelMat"), 1, GL_FALSE, glm::value_ptr(g_sun));
   glUniform3f(glGetUniformLocation(g_program, "objectColor"), 1.0f, 1.0f, 0.2f);
   g_mesh.render();
 
   //std::cout << "sun drawn" <<std::endl;
 
 
-  glm::mat4 M_earth = glm::translate(glm::mat4(1.0f), glm::vec3(kRadOrbitEarth, 0.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(kSizeEarth));
-  glUniformMatrix4fv(glGetUniformLocation(g_program, "modelMat"), 1, GL_FALSE, glm::value_ptr(M_earth));
+  
+  glUniformMatrix4fv(glGetUniformLocation(g_program, "modelMat"), 1, GL_FALSE, glm::value_ptr(g_earth));
   glUniform3f(glGetUniformLocation(g_program, "objectColor"), 0.2f, 0.2f, 1.0f);
   g_mesh.render();
 
   //std::cout << "earth drawn" <<std::endl;
 
-  glm::mat4 M_moon = glm::translate(M_earth, glm::vec3(kRadOrbitMoon, 0.0f, 0.0f)) * glm::scale(glm::mat4(1.0f), glm::vec3(kSizeMoon));
-  glUniformMatrix4fv(glGetUniformLocation(g_program, "modelMat"), 1, GL_FALSE, glm::value_ptr(M_moon));
+
+  glUniformMatrix4fv(glGetUniformLocation(g_program, "modelMat"), 1, GL_FALSE, glm::value_ptr(g_moon));
   glUniform3f(glGetUniformLocation(g_program, "objectColor"), 0.8f, 0.8f, 0.8f); 
 
   g_mesh.render();
@@ -381,6 +380,31 @@ void render() {
 // Update any accessible variable based on the current time
 void update(const float currentTimeInSec) {
   // std::cout << currentTimeInSec << std::endl;
+
+  float t = static_cast<float>(glfwGetTime());
+
+  float wEarthSpinSpeed = g_baseSpinSpeed;
+  float wEarthOrbit = 0.5f * wEarthSpinSpeed;
+  float wMoonOrbit = 2.0f * wEarthSpinSpeed;
+  float wMoonSpinSpeed = wMoonOrbit;
+
+  const float tilt = glm::radians(23.5f);
+
+  g_sun = glm::scale(glm::mat4(1.0f), glm::vec3(kSizeSun));
+
+  g_earth =
+      glm::rotate(glm::mat4(1.0f), t * wEarthOrbit, glm::vec3(0,1,0)) *
+      glm::translate(glm::mat4(1.0f), glm::vec3(kRadOrbitEarth, 0, 0)) *
+      glm::rotate(glm::mat4(1.0f), tilt, glm::vec3(0,0,1)) *
+      glm::rotate(glm::mat4(1.0f), t * wEarthSpinSpeed, glm::vec3(0,1,0)) *
+      glm::scale(glm::mat4(1.0f), glm::vec3(kSizeEarth));
+
+  g_moon =
+      g_earth *
+      glm::rotate(glm::mat4(1.0f), t * wMoonOrbit, glm::vec3(0,1,0)) *
+      glm::translate(glm::mat4(1.0f), glm::vec3(kRadOrbitMoon, 0, 0)) *
+      glm::rotate(glm::mat4(1.0f), t * wMoonSpinSpeed,  glm::vec3(0,1,0)) *
+      glm::scale(glm::mat4(1.0f), glm::vec3(kSizeMoon));
 }
 
 int main(int argc, char ** argv) {
