@@ -56,7 +56,7 @@ const static float kRadOrbitEarth = 1.25f;
 const static float kRadOrbitMoon = 1.5f;
 
 glm::mat4 g_sun(1.0f), g_earth(1.0f), g_moon(1.0f);
-float g_baseSpinSpeed = 1.0f;
+float g_baseSpinSpeed = 0.75f;
 
 GLuint g_textureSun = 0;
 GLuint g_textureEarth = 0;
@@ -317,6 +317,8 @@ void initOpenGL() {
   glDepthFunc(GL_LESS);   // Specify the depth test for the z-buffer
   glEnable(GL_DEPTH_TEST);      // Enable the z-buffer test in the rasterization
   glClearColor(0.7f, 0.7f, 0.7f, 1.0f); // specify the background color, used any time the framebuffer is cleared
+
+  glEnable(GL_FRAMEBUFFER_SRGB);
 }
 
 //initializes the camera from current window size and sets basic positions
@@ -364,23 +366,29 @@ void clear() {
 void render() {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Erase the color and z buffers.
 
+  glUseProgram(g_program);
+
   const glm::mat4 viewMatrix = g_camera.computeViewMatrix();
   const glm::mat4 projMatrix = g_camera.computeProjectionMatrix();
-
-  glUseProgram(g_program);
 
   glUniformMatrix4fv(glGetUniformLocation(g_program, "viewMat"), 1, GL_FALSE, glm::value_ptr(viewMatrix)); // compute the view matrix of the camera and pass it to the GPU program
   glUniformMatrix4fv(glGetUniformLocation(g_program, "projMat"), 1, GL_FALSE, glm::value_ptr(projMatrix)); // compute the projection matrix of the camera and pass it to the GPU program
 
+
   glm::vec3 camPos = g_camera.getPosition();
-  glm::vec3 lightPos = glm::vec3(g_sun * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+  glm::vec3 lightPos = glm::vec3(g_sun * glm::vec4(0, 0, 0, 1));
+
   glUniform3fv(glGetUniformLocation(g_program, "camPos"), 1, glm::value_ptr(camPos));
   glUniform3fv(glGetUniformLocation(g_program, "lightPos"), 1, glm::value_ptr(lightPos));
+
   glUniform1i(glGetUniformLocation(g_program, "textureSampler"), 0);
   glActiveTexture(GL_TEXTURE0);
 
+  
+  const GLint locEmissive = glGetUniformLocation(g_program, "isEmissive");
 
   glBindTexture(GL_TEXTURE_2D, g_textureSun);
+  glUniform1i(locEmissive, 1);
   glUniformMatrix4fv(glGetUniformLocation(g_program, "modelMat"), 1, GL_FALSE, glm::value_ptr(g_sun));
   glUniform3f(glGetUniformLocation(g_program, "objectColor"), 1.0f, 1.0f, 1.0f);
   g_mesh.render();
@@ -388,6 +396,7 @@ void render() {
   //std::cout << "sun drawn" <<std::endl;
 
   glBindTexture(GL_TEXTURE_2D, g_textureEarth);
+  glUniform1i(locEmissive, 0);
   glUniformMatrix4fv(glGetUniformLocation(g_program, "modelMat"), 1, GL_FALSE, glm::value_ptr(g_earth));
   glUniform3f(glGetUniformLocation(g_program, "objectColor"), 1.0f, 1.0f, 1.0f);
   g_mesh.render();
@@ -395,6 +404,7 @@ void render() {
   //std::cout << "earth drawn" <<std::endl;
 
   glBindTexture(GL_TEXTURE_2D, g_textureMoon);
+  glUniform1i(locEmissive, 0);
   glUniformMatrix4fv(glGetUniformLocation(g_program, "modelMat"), 1, GL_FALSE, glm::value_ptr(g_moon));
   glUniform3f(glGetUniformLocation(g_program, "objectColor"), 1.0f, 1.0f, 1.0f); 
 
@@ -409,27 +419,31 @@ void update(const float currentTimeInSec) {
 
   float t = static_cast<float>(glfwGetTime());
 
-  float wEarthSpinSpeed = g_baseSpinSpeed;
-  float wEarthOrbit = 0.5f * wEarthSpinSpeed;
-  float wMoonOrbit = 2.0f * wEarthSpinSpeed;
-  float wMoonSpinSpeed = wMoonOrbit;
+  float earthSpinSpeed = g_baseSpinSpeed;
+  float earthOrbit = 0.5f * earthSpinSpeed;
+  float moonOrbit = 2.0f * earthSpinSpeed;
+  float moonSpinSpeed = moonOrbit;
+
+  float sunSpinSpeed = 4 * g_baseSpinSpeed;
 
   const float tilt = glm::radians(23.5f);
 
-  g_sun = glm::scale(glm::mat4(1.0f), glm::vec3(kSizeSun));
+  g_sun = 
+      glm::rotate(glm::mat4(1.0f), t * sunSpinSpeed, glm::vec3(0,1,0)) *
+      glm::scale(glm::mat4(1.0f), glm::vec3(kSizeSun));
 
   g_earth =
-      glm::rotate(glm::mat4(1.0f), t * wEarthOrbit, glm::vec3(0,1,0)) *
+      glm::rotate(glm::mat4(1.0f), t * earthOrbit, glm::vec3(0,1,0)) *
       glm::translate(glm::mat4(1.0f), glm::vec3(kRadOrbitEarth, 0, 0)) *
       glm::rotate(glm::mat4(1.0f), tilt, glm::vec3(0,0,1)) *
-      glm::rotate(glm::mat4(1.0f), t * wEarthSpinSpeed, glm::vec3(0,1,0)) *
+      glm::rotate(glm::mat4(1.0f), t * earthSpinSpeed, glm::vec3(0,1,0)) *
       glm::scale(glm::mat4(1.0f), glm::vec3(kSizeEarth));
 
   g_moon =
       g_earth *
-      glm::rotate(glm::mat4(1.0f), t * wMoonOrbit, glm::vec3(0,1,0)) *
+      glm::rotate(glm::mat4(1.0f), t * moonOrbit, glm::vec3(0,1,0)) *
       glm::translate(glm::mat4(1.0f), glm::vec3(kRadOrbitMoon, 0, 0)) *
-      glm::rotate(glm::mat4(1.0f), t * wMoonSpinSpeed,  glm::vec3(0,1,0)) *
+      glm::rotate(glm::mat4(1.0f), t * moonSpinSpeed,  glm::vec3(0,1,0)) *
       glm::scale(glm::mat4(1.0f), glm::vec3(kSizeMoon));
 }
 

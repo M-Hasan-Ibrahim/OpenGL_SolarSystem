@@ -12,9 +12,10 @@ uniform mat4 viewMat, projMat, modelMat;
 
 void main() {
         vec4 worldPos = modelMat * vec4(vPosition, 1.0);
+        
         fPosition = worldPos.xyz;
 
-        fNormal = mat3(modelMat) * vNormal;
+        fNormal = mat3(transpose(inverse(modelMat))) * vNormal;
 
         fTexture = vTexture;
 
